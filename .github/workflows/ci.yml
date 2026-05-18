@@ -26,7 +26,7 @@ jobs:
         run: npx playwright install --with-deps
 
       - name: Ejecutar tests de regresión
-        run: npx cross-env ENV=ci BROWSER=chromium HEADLESS=false cucumber-js --tags "@prueba-eci"
+        run: xvfb-run -a npx cross-env ENV=ci BROWSER=chromium HEADLESS=false cucumber-js --tags "@prueba-eci"
         
       - name: Subir reporte HTML de Cucumber
         if: always()

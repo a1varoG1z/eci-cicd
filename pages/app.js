@@ -21,13 +21,18 @@ const ACTIONS = {
     forceDefaultTag: false
   },
   accessibility: {
-    workflowFile: "playwright-accessibility-manual.yml",
+    workflowFile: "playwright-manual.yml",
     defaultTag: "@accesibility",
     forceDefaultTag: true
   },
   performance: {
-    workflowFile: "playwright-performance-manual.yml",
+    workflowFile: "playwright-manual.yml",
     defaultTag: "@performance",
+    forceDefaultTag: true
+  },
+  security: {
+    workflowFile: "playwright-manual.yml",
+    defaultTag: "@security",
     forceDefaultTag: true
   },
   "prueba-eci": {
@@ -313,9 +318,14 @@ async function extractHtmlFilesFromArtifact(cfg, artifact) {
 
   const blob = await fetchArtifactBlob(cfg, artifact);
   const zip = await window.JSZip.loadAsync(blob);
+  
+  // Buscar todos los archivos .html o .htm recursivamente en cualquier carpeta
   const htmlEntries = Object.values(zip.files).filter(
-    (entry) => !entry.dir && /\.html?$/i.test(entry.name)
+    (entry) => !entry.dir && /\.htm?$/i.test(entry.name)
   );
+
+  // Ordenar por nombre para mejor presentacion
+  htmlEntries.sort((a, b) => a.name.localeCompare(b.name));
 
   const files = [];
   for (const entry of htmlEntries) {
@@ -349,21 +359,52 @@ function renderHtmlLinks(containerEl, htmlFiles) {
   const list = document.createElement("div");
   list.style.marginTop = "6px";
 
+  // Agrupar archivos por carpeta
+  const folders = {};
   htmlFiles.forEach((file) => {
-    const link = document.createElement("a");
-    link.href = "#";
-    link.textContent = file.name;
-    link.style.display = "block";
-    link.style.marginBottom = "4px";
-    link.addEventListener("click", (event) => {
-      event.preventDefault();
-      try {
-        openHtmlInNewTab(file);
-      } catch (err) {
-        setStatus(err.message || String(err), true);
-      }
+    const parts = file.name.split("/");
+    const folder = parts.length > 1 ? parts.slice(0, -1).join("/") : "Raíz";
+    if (!folders[folder]) {
+      folders[folder] = [];
+    }
+    folders[folder].push(file);
+  });
+
+  // Renderizar por carpeta
+  Object.keys(folders).sort().forEach((folder) => {
+    const folderDiv = document.createElement("div");
+    folderDiv.style.marginBottom = "8px";
+    
+    if (folder !== "Raíz") {
+      const folderLabel = document.createElement("small");
+      folderLabel.style.display = "block";
+      folderLabel.style.fontWeight = "bold";
+      folderLabel.style.color = "#666";
+      folderLabel.style.marginBottom = "4px";
+      folderLabel.textContent = `📁 ${folder}/`;
+      folderDiv.appendChild(folderLabel);
+    }
+
+    folders[folder].forEach((file) => {
+      const link = document.createElement("a");
+      link.href = "#";
+      const fileName = file.name.split("/").pop();
+      link.textContent = fileName;
+      link.style.display = "block";
+      link.style.marginBottom = "4px";
+      link.style.paddingLeft = folder !== "Raíz" ? "16px" : "0";
+      link.addEventListener("click", (event) => {
+        event.preventDefault();
+        try {
+          openHtmlInNewTab(file);
+        } catch (err) {
+          setStatus(err.message || String(err), true);
+        }
+      });
+      folderDiv.appendChild(link);
     });
-    list.appendChild(link);
+
+    list.appendChild(folderDiv);
   });
 
   containerEl.appendChild(list);
