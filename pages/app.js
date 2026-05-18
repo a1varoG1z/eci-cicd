@@ -1,4 +1,7 @@
 const STORAGE_KEY = "pw-evidencias-actions-config";
+const RUN_HISTORY_KEY = "pw-evidencias-run-history";
+const RUN_HISTORY_LIMIT = 20;
+const RUN_HISTORY_FILTER_KEY = "pw-evidencias-run-history-filter";
 
 const ownerEl = document.getElementById("owner");
 const repoEl = document.getElementById("repo");
@@ -13,6 +16,8 @@ const saveBtn = document.getElementById("saveBtn");
 const statusEl = document.getElementById("status");
 const runInfoEl = document.getElementById("runInfo");
 const artifactsEl = document.getElementById("artifacts");
+let runHistory = [];
+let runHistoryFilter = "all";
 
 const ACTIONS = {
   playwright: {
@@ -189,6 +194,193 @@ function renderRunInfo(run, owner, repo) {
     <p><strong>Conclusion:</strong> ${run.conclusion || "-"}</p>
     <p class="links"><a href="${runUrl}" target="_blank" rel="noreferrer">Abrir ejecucion en GitHub</a></p>
   `;
+}
+
+function loadRunHistory() {
+  try {
+    const raw = localStorage.getItem(RUN_HISTORY_KEY);
+    if (!raw) return [];
+
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((entry) => ({
+      ...entry,
+      testType: entry.testType || inferTestType(entry.tags)
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function loadRunHistoryFilter() {
+  try {
+    const value = localStorage.getItem(RUN_HISTORY_FILTER_KEY);
+    return value || "all";
+  } catch {
+    return "all";
+  }
+}
+
+function saveRunHistoryFilter(value) {
+  runHistoryFilter = value || "all";
+  localStorage.setItem(RUN_HISTORY_FILTER_KEY, runHistoryFilter);
+}
+
+function inferTestType(tagsValue) {
+  const tags = (tagsValue || "").toLowerCase();
+  if (tags.includes("@accesibility")) return "accessibility";
+  if (tags.includes("@performance")) return "performance";
+  if (tags.includes("@security")) return "security";
+  if (tags.includes("@prueba-eci")) return "prueba-eci";
+  if (tags.includes("@regression")) return "playwright";
+  return "other";
+}
+
+function saveRunHistory() {
+  localStorage.setItem(RUN_HISTORY_KEY, JSON.stringify(runHistory.slice(0, RUN_HISTORY_LIMIT)));
+}
+
+function addRunToHistory(cfg, run) {
+  const entry = {
+    id: run.id,
+    owner: cfg.owner,
+    repo: cfg.repo,
+    workflowFile: cfg.workflowFile,
+    tags: cfg.inputs?.tags || cfg.tag || "-",
+    testType: inferTestType(cfg.inputs?.tags || cfg.tag || "-"),
+    status: run.status,
+    conclusion: run.conclusion || "-",
+    createdAt: run.created_at || new Date().toISOString()
+  };
+
+  runHistory = runHistory.filter((item) => item.id !== entry.id);
+  runHistory.unshift(entry);
+  runHistory = runHistory.slice(0, RUN_HISTORY_LIMIT);
+  saveRunHistory();
+}
+
+async function showArtifactsForHistoricalRun(entry) {
+  const cfg = readConfig();
+  if (!cfg.token) {
+    throw new Error("Debes indicar un PAT de GitHub para consultar artefactos historicos.");
+  }
+
+  const historyCfg = {
+    ...cfg,
+    owner: entry.owner,
+    repo: entry.repo
+  };
+
+  setStatus(`Cargando artefactos de run ${entry.id}...`);
+  const payload = await listArtifacts(historyCfg, entry.id);
+  renderArtifacts(historyCfg, entry.id, payload.artifacts || []);
+  setStatus(`Artefactos cargados para run ${entry.id}.`);
+}
+
+function renderRunHistory() {
+  const existing = document.getElementById("runHistoryBlock");
+  if (existing) existing.remove();
+
+  const block = document.createElement("div");
+  block.id = "runHistoryBlock";
+  block.style.marginTop = "14px";
+
+  const title = document.createElement("h3");
+  title.textContent = "Historial de ejecuciones";
+  title.style.margin = "0 0 8px 0";
+  block.appendChild(title);
+
+  const filterWrap = document.createElement("div");
+  filterWrap.style.marginBottom = "10px";
+
+  const filterLabel = document.createElement("small");
+  filterLabel.textContent = "Filtrar por tipo:";
+  filterLabel.style.marginRight = "8px";
+
+  const filterSelect = document.createElement("select");
+  [
+    { value: "all", label: "Todos" },
+    { value: "playwright", label: "Playwright" },
+    { value: "accessibility", label: "Accesibilidad" },
+    { value: "performance", label: "Performance" },
+    { value: "security", label: "Security" },
+    { value: "prueba-eci", label: "Prueba ECI" },
+    { value: "other", label: "Otros" }
+  ].forEach((opt) => {
+    const option = document.createElement("option");
+    option.value = opt.value;
+    option.textContent = opt.label;
+    if (runHistoryFilter === opt.value) option.selected = true;
+    filterSelect.appendChild(option);
+  });
+
+  filterSelect.onchange = () => {
+    saveRunHistoryFilter(filterSelect.value);
+    renderRunHistory();
+  };
+
+  filterWrap.appendChild(filterLabel);
+  filterWrap.appendChild(filterSelect);
+  block.appendChild(filterWrap);
+
+  if (!runHistory.length) {
+    const empty = document.createElement("p");
+    empty.innerHTML = "<small>No hay ejecuciones guardadas en esta sesion.</small>";
+    block.appendChild(empty);
+    runInfoEl.appendChild(block);
+    return;
+  }
+
+  const filteredHistory = runHistory.filter((entry) => {
+    if (runHistoryFilter === "all") return true;
+    return (entry.testType || inferTestType(entry.tags)) === runHistoryFilter;
+  });
+
+  if (!filteredHistory.length) {
+    const emptyFilter = document.createElement("p");
+    emptyFilter.innerHTML = "<small>No hay ejecuciones para este tipo.</small>";
+    block.appendChild(emptyFilter);
+    runInfoEl.appendChild(block);
+    return;
+  }
+
+  const list = document.createElement("div");
+  filteredHistory.forEach((entry) => {
+    const row = document.createElement("div");
+    row.style.marginBottom = "8px";
+    row.style.padding = "8px";
+    row.style.border = "1px solid #ddd";
+    row.style.borderRadius = "8px";
+
+    const meta = document.createElement("small");
+    meta.style.display = "block";
+    meta.style.marginBottom = "6px";
+    meta.textContent = `#${entry.id} | ${entry.workflowFile} | ${entry.tags} | ${entry.status}/${entry.conclusion}`;
+    row.appendChild(meta);
+
+    const actions = document.createElement("div");
+    const runLink = document.createElement("a");
+    runLink.href = `https://github.com/${entry.owner}/${entry.repo}/actions/runs/${entry.id}`;
+    runLink.target = "_blank";
+    runLink.rel = "noreferrer";
+    runLink.textContent = "Ver run";
+    actions.appendChild(runLink);
+
+    const btn = document.createElement("button");
+    btn.textContent = "Ver artefactos";
+    btn.className = "secondary";
+    btn.style.marginLeft = "8px";
+    btn.onclick = () => {
+      showArtifactsForHistoricalRun(entry).catch((err) => setStatus(err.message || String(err), true));
+    };
+    actions.appendChild(btn);
+
+    row.appendChild(actions);
+    list.appendChild(row);
+  });
+
+  block.appendChild(list);
+  runInfoEl.appendChild(block);
 }
 
 function renderDispatchDebug(cfg) {
@@ -625,6 +817,9 @@ async function runFlow() {
     const completedRun = await waitForCompletion(cfg, run.id);
     setStatus(`Workflow terminado con resultado: ${completedRun.conclusion || "unknown"}`);
 
+    addRunToHistory(cfg, completedRun);
+    renderRunHistory();
+
     const artifactPayload = await listArtifacts(cfg, run.id);
     renderArtifacts(cfg, run.id, artifactPayload.artifacts || []);
   } catch (err) {
@@ -643,5 +838,8 @@ actionSelectEl.addEventListener("change", () => {
 });
 
 guessRepoFromLocation();
+runHistory = loadRunHistory();
+runHistoryFilter = loadRunHistoryFilter();
 loadLocalConfig();
 applyActionPreset(actionSelectEl.value);
+renderRunHistory();
