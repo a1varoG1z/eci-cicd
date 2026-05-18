@@ -39,6 +39,9 @@ jobs:
       - name: Instalar navegadores de Playwright
         run: npx playwright install --with-deps
 
+      - name: Verificar variable HEADLESS
+        run: echo "HEADLESS=${{ inputs.headless }}"
+
       - name: Ejecutar tests por tag
         run: npx cross-env ENV=${{ inputs.env }} BROWSER=${{ inputs.browser }} HEADLESS=${{ inputs.headless }} cucumber-js --tags "${{ inputs.tags }}"
 
