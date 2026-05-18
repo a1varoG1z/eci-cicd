@@ -66,6 +66,10 @@ jobs:
             reports/cucumber-report.json
             reports/screenshots
             reports/accessibility
+            reports/performance
+            reports/security
             reports/lighthouse
+            reports/lighthouse.zip
+            reports/security.zip
           if-no-files-found: ignore
           retention-days: 7
