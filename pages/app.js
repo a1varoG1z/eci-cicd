@@ -55,12 +55,15 @@ function parseInputsJson(rawValue) {
   return parsed;
 }
 
+const browserEl = document.getElementById("browser");
+const headlessEl = document.getElementById("headless");
+
 function readConfig() {
   const action = actionSelectEl.value || "playwright";
   const actionConfig = ACTIONS[action] || ACTIONS.playwright;
 
   const inputs = parseInputsJson(workflowInputsEl.value);
-  inputs.browser = browserEl.value;
+  inputs.browser = browserEl.value.toLowerCase(); // Ensure browser is lowercase
   inputs.headless = headlessEl.value === "true";
 
   return {
