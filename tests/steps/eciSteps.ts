@@ -10,6 +10,7 @@ Given('Estoy en la pagina de inicio de El Corte Ingles', async function (this: I
 Given('Estoy en la pagina de inicio de El Corte Inglés', async function (this: ICustomWorld) {
   if (!this.eciHomePage) throw new Error('EciHomePage no ha sido inicializada');
   await this.eciHomePage.navigateToHome();
+  await this.eciHomePage.acceptCookiesIfPresent();
 });
 
 When('Navego a la sección de supermercado club del gourmet', async function (this: ICustomWorld) {

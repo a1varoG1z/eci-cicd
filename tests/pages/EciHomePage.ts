@@ -25,7 +25,7 @@ export class EciHomePage extends BasePage {
 
     this.selectors = {
       burgerButton: '#burger-handler',
-      supermercadoMenuLevel1: '#menulink_1_2',
+      supermercadoMenuLevel1: 'span#menulink_1_1',
       supermercadoMenuLevel2: 'a#menulink_2_0[href*="/supermercado/"]',
       clubGourmetMenuLevel3: '#menulink_3_19',
       clubGourmetAllLevel4: 'a#menulink_4_0[href*="tienda-club-del-gourmet"]',
@@ -34,6 +34,13 @@ export class EciHomePage extends BasePage {
       addToCartButtonJoyeria: 'button.pds-button:has-text("Añadir")',
       joyeriaCartBadge: 'span.icon-badge.pointer',
     };
+  }
+
+  async acceptCookiesIfPresent(): Promise<void> {
+    const acceptBtn = await this.page.$('#onetrust-accept-btn-handler');
+    if (acceptBtn) {
+      await acceptBtn.click();
+    }
   }
 
   async navigateToHome(): Promise<void> {
