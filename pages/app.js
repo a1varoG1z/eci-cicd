@@ -321,7 +321,8 @@ async function extractHtmlFilesFromArtifact(cfg, artifact) {
 
   const files = [];
   for (const entry of htmlEntries) {
-    const fileBlob = await entry.async("blob");
+    const htmlContent = await entry.async("string");
+    const fileBlob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
     const fileUrl = URL.createObjectURL(fileBlob);
     files.push({ name: entry.name, url: fileUrl });
   }
