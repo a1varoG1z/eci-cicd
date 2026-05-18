@@ -31,8 +31,8 @@
     "performance:history": "npx open-cli reports/performance/playwright/performance-history.html",
     "lighthouse": "tsx scripts/lighthouse.ts",
     "lighthouse:ci": "cross-env ENV=ci tsx scripts/lighthouse.ts",
-    "test:prueba-eci:headless": "cross-env ENV=ci BROWSER=electron HEADLESS=true cucumber-js --tags @prueba-eci",
-    "test:prueba-eci": "cross-env ENV=ci BROWSER=electron HEADLESS=false cucumber-js --tags @prueba-eci"
+    "test:prueba-eci:headless": "cross-env ENV=ci BROWSER=chromium HEADLESS=true cucumber-js --tags @prueba-eci",
+    "test:prueba-eci": "cross-env ENV=ci BROWSER=chromium HEADLESS=false cucumber-js --tags @prueba-eci"
 
   },
   "keywords": [

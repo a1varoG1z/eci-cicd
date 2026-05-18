@@ -47,7 +47,14 @@ jobs:
           echo "env=${{ inputs.env }}"
 
       - name: Ejecutar tests por tag
-        run: npx cross-env ENV=${{ inputs.env }} BROWSER=${{ inputs.browser }} HEADLESS=${{ inputs.headless }} cucumber-js --tags "${{ inputs.tags }}"
+        run: |
+          if [ "${{ inputs.headless }}" = "false" ]; then
+            echo "Ejecutando en modo headed virtual con Xvfb"
+            xvfb-run -a npx cross-env ENV=${{ inputs.env }} BROWSER=${{ inputs.browser }} HEADLESS=false cucumber-js --tags "${{ inputs.tags }}"
+          else
+            echo "Ejecutando en modo headless"
+            npx cross-env ENV=${{ inputs.env }} BROWSER=${{ inputs.browser }} HEADLESS=true cucumber-js --tags "${{ inputs.tags }}"
+          fi
 
       - name: Subir artefactos de reportes
         if: always()
