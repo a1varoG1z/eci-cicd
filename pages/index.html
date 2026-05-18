@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PW Evidencias Actions Console</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="top-bar">
+      <img src="../docs/logo-izertis.png" alt="Icertis" class="logo" />
+      <h1>PW para Evidencias</h1>
+    </header>
+
+    <main class="layout">
+      <section class="panel">
+        <p class="subtitle">Lanza workflows y descarga artefactos de GitHub Actions.</p>
+
+        <div class="field-grid">
+          <label class="field">
+            <span>Owner</span>
+            <input id="owner" type="text" value="eci-qa-corp" />
+          </label>
+          <label class="field">
+            <span>Repository</span>
+            <input id="repo" type="text" value="pw-para-evidencias" />
+          </label>
+          <label class="field">
+            <span>Ref</span>
+            <input id="ref" type="text" value="main" />
+          </label>
+        </div>
+
+        <label class="field token">
+          <span>GitHub PAT (Actions: write, Read access to actions/artifacts)</span>
+          <input id="token" type="password" autocomplete="off" placeholder="github_pat_..." />
+        </label>
+
+        <label class="field">
+          <span>Tipo de ejecucion</span>
+          <select id="actionSelect">
+            <option value="playwright">Playwright normal (tag configurable)</option>
+            <option value="accessibility">Accesibilidad (usa tag @accesibility)</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Tag de Cucumber (ej: @regression)</span>
+          <input id="tag" type="text" value="@regression" required />
+        </label>
+
+        <label class="field">
+          <span>Workflow file (.yml/.yaml)</span>
+          <input id="workflowFile" type="text" value="playwright-manual.yml" required />
+        </label>
+
+        <label class="field">
+          <span>Inputs del workflow (JSON)</span>
+          <textarea id="workflowInputs" rows="6" spellcheck="false" placeholder='{"tags":"@regression","browser":"chromium"}'>{}</textarea>
+        </label>
+
+        <div class="actions">
+          <button id="runBtn" type="button">Ejecutar</button>
+          <button id="saveBtn" type="button" class="secondary">Guardar config local</button>
+        </div>
+
+        <div id="status" class="status">Listo.</div>
+      </section>
+
+      <section class="panel">
+        <h2>Ultima ejecucion</h2>
+        <div id="runInfo" class="run-info">
+          <p>Aun no hay ejecuciones desde esta sesion.</p>
+        </div>
+
+        <h2>Artefactos</h2>
+        <div id="artifacts" class="artifacts">
+          <p>No hay artefactos cargados.</p>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

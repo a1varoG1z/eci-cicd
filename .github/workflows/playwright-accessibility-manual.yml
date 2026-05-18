@@ -1,0 +1,53 @@
+name: test-playwright-accessibility-manual
+
+on:
+  workflow_dispatch:
+    inputs:
+      browser:
+        description: "Navegador"
+        required: true
+        default: "chromium"
+      headless:
+        description: "Headless (true/false)"
+        required: true
+        default: "false"
+      env:
+        description: "Entorno"
+        required: true
+        default: "ci"
+
+jobs:
+  test-playwright-accessibility:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout codigo
+        uses: actions/checkout@v4
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Instalar navegadores de Playwright
+        run: npx playwright install --with-deps
+
+      - name: Ejecutar tests de accesibilidad
+        run: npx cross-env ENV=${{ inputs.env }} BROWSER=${{ inputs.browser }} HEADLESS=${{ inputs.headless }} cucumber-js --tags "@accesibility"
+
+      - name: Subir artefactos de reportes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-reports-${{ github.run_number }}
+          path: |
+            reports/cucumber-report.html
+            reports/cucumber-report.json
+            reports/screenshots
+            reports/accessibility
+            reports/lighthouse
+          if-no-files-found: ignore
+          retention-days: 7
