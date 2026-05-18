@@ -318,11 +318,43 @@ async function extractHtmlFilesFromArtifact(cfg, artifact) {
 
   const blob = await fetchArtifactBlob(cfg, artifact);
   const zip = await window.JSZip.loadAsync(blob);
-  
-  // Buscar todos los archivos .html o .htm recursivamente en cualquier carpeta
-  const htmlEntries = Object.values(zip.files).filter(
-    (entry) => !entry.dir && /\.html?$/i.test(entry.name)
-  );
+
+  const allFiles = Object.values(zip.files).filter((entry) => !entry.dir);
+  const debug = {
+    totalEntries: allFiles.length,
+    directHtmlMatches: 0,
+    nestedZipCount: 0,
+    nestedHtmlMatches: 0,
+    sampleEntries: allFiles.slice(0, 30).map((entry) => entry.name.replace(/\\/g, "/")),
+    sampleHtmlEntries: []
+  };
+
+  // Primero: detectar por extension de archivo.
+  let htmlEntries = allFiles.filter((entry) => /\.html?$/i.test(entry.name));
+  debug.directHtmlMatches = htmlEntries.length;
+
+  // Fallback: algunos artefactos pueden tener HTML sin extension clara.
+  if (!htmlEntries.length) {
+    const detected = [];
+    for (const entry of allFiles) {
+      try {
+        const raw = await entry.async("string");
+        const sample = raw.slice(0, 1024).toLowerCase();
+        const looksLikeHtml =
+          sample.includes("<!doctype html") ||
+          sample.includes("<html") ||
+          sample.includes("<head") ||
+          sample.includes("<body");
+
+        if (looksLikeHtml) {
+          detected.push(entry);
+        }
+      } catch {
+        // Ignorar entradas binarias o no-texto durante el fallback.
+      }
+    }
+    htmlEntries = detected;
+  }
 
   // Ordenar por nombre para mejor presentacion
   htmlEntries.sort((a, b) => a.name.localeCompare(b.name));
@@ -330,10 +362,83 @@ async function extractHtmlFilesFromArtifact(cfg, artifact) {
   const files = [];
   for (const entry of htmlEntries) {
     const htmlContent = await entry.async("string");
-    files.push({ name: entry.name, content: htmlContent });
+    files.push({ name: entry.name.replace(/\\/g, "/"), content: htmlContent });
   }
 
-  return files;
+  // Extra: buscar HTML dentro de zips anidados (ej. lighthouse.zip, security.zip).
+  const nestedZipEntries = allFiles.filter((entry) => /\.zip$/i.test(entry.name));
+  for (const zipEntry of nestedZipEntries) {
+    try {
+      const nestedBuffer = await zipEntry.async("arraybuffer");
+      const nestedZip = await window.JSZip.loadAsync(nestedBuffer);
+      const nestedHtml = Object.values(nestedZip.files).filter(
+        (entry) => !entry.dir && /\.html?$/i.test(entry.name)
+      );
+
+      debug.nestedZipCount += 1;
+      debug.nestedHtmlMatches += nestedHtml.length;
+
+      for (const nestedEntry of nestedHtml) {
+        const nestedHtmlContent = await nestedEntry.async("string");
+        files.push({
+          name: `${zipEntry.name.replace(/\\/g, "/")}!/${nestedEntry.name.replace(/\\/g, "/")}`,
+          content: nestedHtmlContent
+        });
+      }
+    } catch {
+      // Ignorar zip corrupto o no-zip real.
+    }
+  }
+
+  files.sort((a, b) => a.name.localeCompare(b.name));
+  debug.sampleHtmlEntries = files.slice(0, 30).map((file) => file.name);
+
+  return { files, debug };
+}
+
+function renderHtmlDebug(containerEl, debug) {
+  const debugBox = document.createElement("details");
+  debugBox.style.marginTop = "8px";
+
+  const summary = document.createElement("summary");
+  summary.textContent = "Diagnostico HTML";
+  debugBox.appendChild(summary);
+
+  const info = document.createElement("div");
+  info.style.marginTop = "6px";
+  info.innerHTML = `
+    <small>
+      entries zip: <strong>${debug.totalEntries}</strong><br/>
+      html directos: <strong>${debug.directHtmlMatches}</strong><br/>
+      zips anidados: <strong>${debug.nestedZipCount}</strong><br/>
+      html en anidados: <strong>${debug.nestedHtmlMatches}</strong>
+    </small>
+  `;
+  debugBox.appendChild(info);
+
+  const sampleTitle = document.createElement("small");
+  sampleTitle.style.display = "block";
+  sampleTitle.style.marginTop = "6px";
+  sampleTitle.innerHTML = "<strong>Muestra de nombres detectados:</strong>";
+  debugBox.appendChild(sampleTitle);
+
+  const sampleList = document.createElement("div");
+  sampleList.style.marginTop = "4px";
+
+  const samples = debug.sampleHtmlEntries.length ? debug.sampleHtmlEntries : debug.sampleEntries;
+  if (!samples.length) {
+    sampleList.innerHTML = "<small>No hay entradas en el ZIP.</small>";
+  } else {
+    samples.forEach((name) => {
+      const line = document.createElement("small");
+      line.style.display = "block";
+      line.textContent = name;
+      sampleList.appendChild(line);
+    });
+  }
+
+  debugBox.appendChild(sampleList);
+  containerEl.appendChild(debugBox);
 }
 
 function openHtmlInNewTab(file) {
@@ -450,9 +555,10 @@ function renderArtifacts(cfg, runId, artifacts) {
       try {
         htmlBtn.disabled = true;
         setStatus(`Buscando HTMLs en ${artifact.name}...`);
-        const htmlFiles = await extractHtmlFilesFromArtifact(cfg, artifact);
-        renderHtmlLinks(htmlLinks, htmlFiles);
-        setStatus(`HTMLs procesados para ${artifact.name}.`);
+        const result = await extractHtmlFilesFromArtifact(cfg, artifact);
+        renderHtmlLinks(htmlLinks, result.files);
+        renderHtmlDebug(htmlLinks, result.debug);
+        setStatus(`HTMLs procesados para ${artifact.name}. Encontrados: ${result.files.length}.`);
       } catch (err) {
         setStatus(err.message || String(err), true);
       } finally {
