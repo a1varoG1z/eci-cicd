@@ -13,6 +13,7 @@ const saveBtn = document.getElementById("saveBtn");
 const statusEl = document.getElementById("status");
 const runInfoEl = document.getElementById("runInfo");
 const artifactsEl = document.getElementById("artifacts");
+const artifactHtmlBlobUrls = new Map();
 
 const ACTIONS = {
   playwright: {
@@ -253,9 +254,7 @@ async function listArtifacts(cfg, runId) {
   return ghFetch(url, cfg.token);
 }
 
-async function downloadArtifact(cfg, artifact) {
-  setStatus(`Descargando artefacto ${artifact.name}...`);
-
+async function fetchArtifactBlob(cfg, artifact) {
   const response = await fetch(artifact.archive_download_url, {
     headers: {
       Accept: "application/vnd.github+json",
@@ -269,7 +268,12 @@ async function downloadArtifact(cfg, artifact) {
     throw new Error(`Error descargando artefacto (${response.status}): ${txt}`);
   }
 
-  const blob = await response.blob();
+  return response.blob();
+}
+
+async function downloadArtifact(cfg, artifact) {
+  setStatus(`Descargando artefacto ${artifact.name}...`);
+  const blob = await fetchArtifactBlob(cfg, artifact);
   const blobUrl = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = blobUrl;
@@ -280,6 +284,56 @@ async function downloadArtifact(cfg, artifact) {
   URL.revokeObjectURL(blobUrl);
 
   setStatus(`Artefacto ${artifact.name} descargado.`);
+}
+
+function revokeArtifactHtmlUrls(artifactId) {
+  const currentUrls = artifactHtmlBlobUrls.get(artifactId) || [];
+  currentUrls.forEach((url) => URL.revokeObjectURL(url));
+  artifactHtmlBlobUrls.delete(artifactId);
+}
+
+async function extractHtmlFilesFromArtifact(cfg, artifact) {
+  if (!window.JSZip) {
+    throw new Error("JSZip no esta cargado. Recarga la pagina e intentalo de nuevo.");
+  }
+
+  const blob = await fetchArtifactBlob(cfg, artifact);
+  const zip = await window.JSZip.loadAsync(blob);
+  const htmlEntries = Object.values(zip.files).filter(
+    (entry) => !entry.dir && /\.html?$/i.test(entry.name)
+  );
+
+  const files = [];
+  for (const entry of htmlEntries) {
+    const fileBlob = await entry.async("blob");
+    const fileUrl = URL.createObjectURL(fileBlob);
+    files.push({ name: entry.name, url: fileUrl });
+  }
+
+  return files;
+}
+
+function renderHtmlLinks(containerEl, artifact, htmlFiles) {
+  revokeArtifactHtmlUrls(artifact.id);
+
+  if (!htmlFiles.length) {
+    containerEl.innerHTML = "<small>No se encontraron archivos HTML en este artefacto.</small>";
+    return;
+  }
+
+  artifactHtmlBlobUrls.set(
+    artifact.id,
+    htmlFiles.map((file) => file.url)
+  );
+
+  const links = htmlFiles
+    .map(
+      (file) =>
+        `<a href="${file.url}" target="_blank" rel="noopener noreferrer">${file.name}</a>`
+    )
+    .join("<br/>");
+
+  containerEl.innerHTML = `<small><strong>HTML detectados:</strong><br/>${links}</small>`;
 }
 
 function renderArtifacts(cfg, runId, artifacts) {
@@ -303,6 +357,11 @@ function renderArtifacts(cfg, runId, artifacts) {
     btn.className = "secondary";
     btn.onclick = () => downloadArtifact(cfg, artifact).catch((err) => setStatus(err.message, true));
 
+    const htmlBtn = document.createElement("button");
+    htmlBtn.textContent = "Ver HTMLs";
+    htmlBtn.className = "secondary";
+    htmlBtn.style.marginLeft = "10px";
+
     const runLink = document.createElement("a");
     runLink.href = `https://github.com/${cfg.owner}/${cfg.repo}/actions/runs/${runId}`;
     runLink.target = "_blank";
@@ -310,12 +369,31 @@ function renderArtifacts(cfg, runId, artifacts) {
     runLink.textContent = "Ver run";
     runLink.style.marginLeft = "10px";
 
+    const htmlLinks = document.createElement("div");
+    htmlLinks.style.marginTop = "10px";
+
+    htmlBtn.onclick = async () => {
+      try {
+        htmlBtn.disabled = true;
+        setStatus(`Buscando HTMLs en ${artifact.name}...`);
+        const htmlFiles = await extractHtmlFilesFromArtifact(cfg, artifact);
+        renderHtmlLinks(htmlLinks, artifact, htmlFiles);
+        setStatus(`HTMLs procesados para ${artifact.name}.`);
+      } catch (err) {
+        setStatus(err.message || String(err), true);
+      } finally {
+        htmlBtn.disabled = false;
+      }
+    };
+
     right.appendChild(btn);
+    right.appendChild(htmlBtn);
     right.appendChild(runLink);
 
     row.appendChild(left);
     row.appendChild(right);
     artifactsEl.appendChild(row);
+    artifactsEl.appendChild(htmlLinks);
   });
 }
 
