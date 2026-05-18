@@ -13,7 +13,6 @@ const saveBtn = document.getElementById("saveBtn");
 const statusEl = document.getElementById("status");
 const runInfoEl = document.getElementById("runInfo");
 const artifactsEl = document.getElementById("artifacts");
-const artifactHtmlBlobUrls = new Map();
 
 const ACTIONS = {
   playwright: {
@@ -302,12 +301,6 @@ async function downloadArtifact(cfg, artifact) {
   setStatus(`Artefacto ${artifact.name} descargado.`);
 }
 
-function revokeArtifactHtmlUrls(artifactId) {
-  const currentUrls = artifactHtmlBlobUrls.get(artifactId) || [];
-  currentUrls.forEach((url) => URL.revokeObjectURL(url));
-  artifactHtmlBlobUrls.delete(artifactId);
-}
-
 async function extractHtmlFilesFromArtifact(cfg, artifact) {
   if (!window.JSZip) {
     throw new Error("JSZip no esta cargado. Recarga la pagina e intentalo de nuevo.");
@@ -322,35 +315,52 @@ async function extractHtmlFilesFromArtifact(cfg, artifact) {
   const files = [];
   for (const entry of htmlEntries) {
     const htmlContent = await entry.async("string");
-    const fileBlob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
-    const fileUrl = URL.createObjectURL(fileBlob);
-    files.push({ name: entry.name, url: fileUrl });
+    files.push({ name: entry.name, content: htmlContent });
   }
 
   return files;
 }
 
-function renderHtmlLinks(containerEl, artifact, htmlFiles) {
-  revokeArtifactHtmlUrls(artifact.id);
+function openHtmlInNewTab(file) {
+  const popup = window.open("", "_blank", "noopener,noreferrer");
+  if (!popup) {
+    throw new Error("El navegador bloqueo la nueva pestana. Permite popups para este sitio.");
+  }
+
+  popup.document.open();
+  popup.document.write(file.content);
+  popup.document.close();
+}
+
+function renderHtmlLinks(containerEl, htmlFiles) {
 
   if (!htmlFiles.length) {
     containerEl.innerHTML = "<small>No se encontraron archivos HTML en este artefacto.</small>";
     return;
   }
 
-  artifactHtmlBlobUrls.set(
-    artifact.id,
-    htmlFiles.map((file) => file.url)
-  );
+  containerEl.innerHTML = "<small><strong>HTML detectados:</strong></small>";
+  const list = document.createElement("div");
+  list.style.marginTop = "6px";
 
-  const links = htmlFiles
-    .map(
-      (file) =>
-        `<a href="${file.url}" target="_blank" rel="noopener noreferrer">${file.name}</a>`
-    )
-    .join("<br/>");
+  htmlFiles.forEach((file) => {
+    const link = document.createElement("a");
+    link.href = "#";
+    link.textContent = file.name;
+    link.style.display = "block";
+    link.style.marginBottom = "4px";
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      try {
+        openHtmlInNewTab(file);
+      } catch (err) {
+        setStatus(err.message || String(err), true);
+      }
+    });
+    list.appendChild(link);
+  });
 
-  containerEl.innerHTML = `<small><strong>HTML detectados:</strong><br/>${links}</small>`;
+  containerEl.appendChild(list);
 }
 
 function renderArtifacts(cfg, runId, artifacts) {
@@ -394,7 +404,7 @@ function renderArtifacts(cfg, runId, artifacts) {
         htmlBtn.disabled = true;
         setStatus(`Buscando HTMLs en ${artifact.name}...`);
         const htmlFiles = await extractHtmlFilesFromArtifact(cfg, artifact);
-        renderHtmlLinks(htmlLinks, artifact, htmlFiles);
+        renderHtmlLinks(htmlLinks, htmlFiles);
         setStatus(`HTMLs procesados para ${artifact.name}.`);
       } catch (err) {
         setStatus(err.message || String(err), true);
