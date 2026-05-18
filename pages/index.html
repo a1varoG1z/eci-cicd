@@ -60,6 +60,22 @@
           <textarea id="workflowInputs" rows="6" spellcheck="false" placeholder='{"tags":"@regression","browser":"chromium"}'>{}</textarea>
         </label>
 
+        <label class="field">
+          <span>Navegador</span>
+          <select id="browser">
+            <option value="chromium">Chromium</option>
+            <option value="electron">Electron</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Headless</span>
+          <select id="headless">
+            <option value="true">True</option>
+            <option value="false">False</option>
+          </select>
+        </label>
+
         <div class="actions">
           <button id="runBtn" type="button">Ejecutar</button>
           <button id="saveBtn" type="button" class="secondary">Guardar config local</button>

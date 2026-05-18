@@ -35,3 +35,13 @@ jobs:
           name: cucumber-html-report-${{ github.run_number }}
           path: reports/cucumber-report.html
           retention-days: 7
+
+inputs:
+  browser:
+    description: "Navegador"
+    required: true
+    default: "chromium"
+  headless:
+    description: "Headless (true/false)"
+    required: true
+    default: "false"

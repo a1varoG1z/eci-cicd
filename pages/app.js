@@ -58,24 +58,19 @@ function parseInputsJson(rawValue) {
 function readConfig() {
   const action = actionSelectEl.value || "playwright";
   const actionConfig = ACTIONS[action] || ACTIONS.playwright;
-  const rawTag = tagEl.value.trim();
-  const effectiveTag = actionConfig.forceDefaultTag ? actionConfig.defaultTag : rawTag;
 
-  const workflowInputs = parseInputsJson(workflowInputsEl.value);
-  if (effectiveTag) {
-    workflowInputs.tags = effectiveTag;
-  }
+  const inputs = parseInputsJson(workflowInputsEl.value);
+  inputs.browser = browserEl.value;
+  inputs.headless = headlessEl.value === "true";
 
   return {
-    owner: ownerEl.value.trim(),
-    repo: repoEl.value.trim(),
-    ref: refEl.value.trim() || "main",
-    token: tokenEl.value.trim(),
-    action,
-    tag: effectiveTag,
-    workflowFile: workflowFileEl.value.trim(),
-    workflowInputsRaw: workflowInputsEl.value,
-    workflowInputs
+    owner: ownerEl.value,
+    repo: repoEl.value,
+    ref: refEl.value,
+    token: tokenEl.value,
+    workflowFile: workflowFileEl.value || actionConfig.workflowFile,
+    inputs,
+    tag: actionConfig.forceDefaultTag ? actionConfig.defaultTag : tagEl.value
   };
 }
 
