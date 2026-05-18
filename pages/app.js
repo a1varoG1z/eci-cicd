@@ -63,15 +63,18 @@ function readConfig() {
   const actionConfig = ACTIONS[action] || ACTIONS.playwright;
 
   const inputs = parseInputsJson(workflowInputsEl.value);
-  inputs.browser = browserEl.value.toLowerCase(); // Ensure browser is lowercase
-  inputs.headless = headlessEl.value === "true";
+  inputs.tags = actionConfig.forceDefaultTag ? actionConfig.defaultTag : tagEl.value;
+  inputs.browser = (browserEl?.value || "chromium").toLowerCase();
+  inputs.headless = headlessEl?.value || "true";
 
   return {
+    action,
     owner: ownerEl.value,
     repo: repoEl.value,
     ref: refEl.value,
     token: tokenEl.value,
     workflowFile: workflowFileEl.value || actionConfig.workflowFile,
+    workflowInputsRaw: workflowInputsEl.value,
     inputs,
     tag: actionConfig.forceDefaultTag ? actionConfig.defaultTag : tagEl.value
   };
@@ -186,7 +189,7 @@ async function dispatchWorkflow(cfg) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       ref: cfg.ref,
-      inputs: cfg.workflowInputs
+      inputs: cfg.inputs
     })
   });
 }

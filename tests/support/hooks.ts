@@ -75,11 +75,12 @@ BeforeAll(async function() {
 });
 
 Before(async function(this: ICustomWorld, scenario) {
-  const browserType = (process.env.BROWSER as 'chromium' | 'firefox' | 'webkit') || 'chromium';
+  const browserType = (process.env.BROWSER as 'chromium' | 'firefox' | 'webkit' | 'electron') || 'chromium';
+  const resolvedBrowserType = browserType === 'electron' ? 'chromium' : browserType;
   await this.openBrowser(browserType);
   this.clearTestData();
   totalScenarios++;
-  console.log(`\n${colors.cyan}🚀 Iniciando escenario:${colors.reset} ${scenario.pickle.name} ${colors.gray}en navegador: ${browserType}${colors.reset}`);
+  console.log(`\n${colors.cyan}🚀 Iniciando escenario:${colors.reset} ${scenario.pickle.name} ${colors.gray}en navegador: ${browserType} (engine: ${resolvedBrowserType})${colors.reset}`);
   console.log(`${colors.violet}⚙️  Entorno:${colors.reset} ${environment}`);
   console.log(`${colors.violet}🌐 URL:${colors.reset} ${process.env.BASE_URL_SUPERMERCADO!}${colors.reset}`);
 });

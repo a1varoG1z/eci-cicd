@@ -26,7 +26,7 @@ export interface ICustomWorld extends World {
   izertisHomePage: IzertisHomePage | null;
   testData: Record<string, any>;
   alertMessage: string;
-  openBrowser(browserType?: 'chromium' | 'firefox' | 'webkit'): Promise<void>;
+  openBrowser(browserType?: 'chromium' | 'firefox' | 'webkit' | 'electron'): Promise<void>;
   closeBrowser(): Promise<void>;
   takeScreenshot(name: string): Promise<void>;
   setTestData(key: string, value: any): void;
@@ -71,14 +71,15 @@ export class CustomWorld extends World implements ICustomWorld {
     this.alertMessage = '';
   }
 
-  async openBrowser(browserType: 'chromium' | 'firefox' | 'webkit' = 'chromium'): Promise<void> {
+  async openBrowser(browserType: 'chromium' | 'firefox' | 'webkit' | 'electron' = 'chromium'): Promise<void> {
+    const resolvedBrowserType = browserType === 'electron' ? 'chromium' : browserType;
     const browserOptions: { headless: boolean; slowMo: number; args?: string[] } = {
       headless: process.env.HEADLESS === 'true',
       slowMo: process.env.SLOW_MO ? parseInt(process.env.SLOW_MO) : 0
     };
 
      // Chromium: evitar ERR_HTTP2_PROTOCOL_ERROR y reducir detección de automatización
-    if (browserType === 'chromium') {
+    if (resolvedBrowserType === 'chromium') {
       browserOptions.args = [
         //'--disable-http2',
         //'--disable-features=Http2ServerPush',
@@ -91,7 +92,7 @@ export class CustomWorld extends World implements ICustomWorld {
       ];
     } 
 
-    switch (browserType) {
+    switch (resolvedBrowserType) {
       case 'firefox':
         this.browser = await firefox.launch(browserOptions);
         break;
