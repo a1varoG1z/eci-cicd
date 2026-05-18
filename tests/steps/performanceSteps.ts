@@ -1,15 +1,8 @@
-import { Given, Then, When } from '@cucumber/cucumber';
+import { Then, When } from '@cucumber/cucumber';
 import { expect } from '@playwright/test';
 import { PerformanceRunner, PerformanceAuditResult } from '../../performance/PerformanceRunner';
 import { ICustomWorld } from '../support/world';
 
-Given('I am in Izertis home page', async function (this: ICustomWorld) {
-  if (!this.izertisHomePage) {
-    throw new Error('IzertisHomePage no ha sido inicializada');
-  }
-
-  await this.izertisHomePage.navigateToHome();
-});
 
 When('I audit performance', async function (this: ICustomWorld) {
   if (!this.page) {
