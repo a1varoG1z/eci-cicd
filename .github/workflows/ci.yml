@@ -25,11 +25,8 @@ jobs:
       - name: Instalar navegadores de Playwright
         run: npx playwright install --with-deps
 
-      - name: Verificar variable HEADLESS
-        run: echo "HEADLESS=${{ inputs.headless }}"
-
       - name: Ejecutar tests de regresión
-        run: npx cross-env ENV=${{ inputs.env }} BROWSER=${{ inputs.browser }} HEADLESS=${{ inputs.headless }} cucumber-js --tags "@regression"
+        run: npx cross-env ENV=ci BROWSER=chromium HEADLESS=false cucumber-js --tags "@prueba-eci"
         
       - name: Subir reporte HTML de Cucumber
         if: always()
@@ -39,12 +36,3 @@ jobs:
           path: reports/cucumber-report.html
           retention-days: 7
 
-inputs:
-  browser:
-    description: "Navegador"
-    required: true
-    default: "chromium"
-  headless:
-    description: "Headless (true/false)"
-    required: true
-    default: "false"

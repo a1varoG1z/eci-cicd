@@ -25,6 +25,11 @@ const ACTIONS = {
     defaultTag: "@accesibility",
     forceDefaultTag: true
   },
+  performance: {
+    workflowFile: "playwright-performance-manual.yml",
+    defaultTag: "@performance",
+    forceDefaultTag: true
+  },
   "prueba-eci": {
     workflowFile: "playwright-manual.yml",
     defaultTag: "@prueba-eci",
@@ -64,7 +69,7 @@ function readConfig() {
   const inputs = parseInputsJson(workflowInputsEl.value);
   inputs.tags = actionConfig.forceDefaultTag ? actionConfig.defaultTag : tagEl.value;
   inputs.browser = (browserEl?.value || "chromium").toLowerCase();
-  inputs.headless = headlessEl?.value || "true";
+  inputs.headless = headlessEl?.value || "false";
 
   return {
     action,

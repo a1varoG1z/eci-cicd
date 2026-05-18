@@ -1,12 +1,12 @@
-name: test-playwright-accessibility-manual
+name: test-playwright-performance-manual
 
 on:
   workflow_dispatch:
     inputs:
       tags:
-        description: "Tag(s) de Cucumber. Ej: @accesibility"
+        description: "Tag(s) de Cucumber. Ej: @performance"
         required: true
-        default: "@accesibility"
+        default: "@performance"
       browser:
         description: "Navegador"
         required: true
@@ -21,7 +21,7 @@ on:
         default: "ci"
 
 jobs:
-  test-playwright-accessibility:
+  test-playwright-performance:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout codigo
@@ -46,7 +46,7 @@ jobs:
           echo "headless=${{ inputs.headless }}"
           echo "env=${{ inputs.env }}"
 
-      - name: Ejecutar tests de accesibilidad
+      - name: Ejecutar tests de performance
         run: |
           if [ "${{ inputs.headless }}" = "false" ]; then
             echo "Ejecutando en modo headed virtual con Xvfb"
@@ -60,12 +60,12 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: accessibility-reports-${{ github.run_number }}
+          name: performance-reports-${{ github.run_number }}
           path: |
             reports/cucumber-report.html
             reports/cucumber-report.json
             reports/screenshots
-            reports/accessibility
+            reports/performance
             reports/lighthouse
           if-no-files-found: ignore
           retention-days: 7
