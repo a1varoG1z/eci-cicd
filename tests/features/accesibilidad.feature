@@ -1,4 +1,4 @@
-@eci @regression @accesibility
+@eci @regresion @accesibility
 Feature: Accesibilidad Supermercado ECI
 
   @accesibility

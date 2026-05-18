@@ -26,7 +26,7 @@ Feature: Supermercado ECI
     Then Estoy en la sección de Club del Gourmet
 
 
-  @positive
+  @positive @id-1
   Scenario: Añadir un producto al carrito del supermercado de forma exitosa de Club del Gourmet
     When Hago click en la sección Club del Gourmet
     Then Estoy en la sección de Club del Gourmet

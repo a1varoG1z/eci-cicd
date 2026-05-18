@@ -16,8 +16,8 @@ export class PlatosPreparadosPage extends BasePage {
 
     this.selectors = {
       platosPreparadosLink: 'a[href*="platos-preparados-de-nuestra-cocina"]',
-      // Botón \"Añadir\" en la tarjeta de producto de la lista
-      addToCartButton: 'button.food-product-preview-cart__add-button'
+      // Botón "Añadir" en listado: nuevo componente A2C + fallback legado
+      addToCartButton: 'button.food-a2c-button.food-a2c-button--add, button.food-product-preview-cart__add-button'
     };
   }
 

@@ -1,13 +1,13 @@
 const config = {
   default: {
-    requireModule: ['ts-node/register'],
+    requireModule: ['tsx'],
     require: [
       'tests/support/world.ts',
       'tests/support/hooks.ts',
       'tests/steps/**/*.ts'
     ],
     format: [
-      'progress-bar',
+      '@cucumber/pretty-formatter',  // ✅ Esto mostrará todos los steps
       'html:reports/cucumber-report.html',
       'json:reports/cucumber-report.json'
     ],

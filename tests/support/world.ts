@@ -8,6 +8,8 @@ import { ClubDelGourmetPage } from '../pages/ClubDelGourmetPage';
 import { ProductoDetallePage } from '../pages/ProductoDetallePage';
 import { SupermercadoBebidasPage } from '../pages/SupermercadoBebidasPage';
 import { SupermercadoAlimentacionGeneralPage } from '../pages/SupermercadoAlimentacionGeneralPage';
+import { EciHomePage } from '../pages/EciHomePage';
+import { IzertisHomePage } from '../pages/IzertisHomePage';
 
 export interface ICustomWorld extends World {
   browser: Browser | null;
@@ -20,6 +22,8 @@ export interface ICustomWorld extends World {
   productoDetallePage: ProductoDetallePage | null;
   supermercadoBebidasPage: SupermercadoBebidasPage | null;
   supermercadoAlimentacionGeneralPage: SupermercadoAlimentacionGeneralPage | null;
+  eciHomePage: EciHomePage | null;
+  izertisHomePage: IzertisHomePage | null;
   testData: Record<string, any>;
   alertMessage: string;
   openBrowser(browserType?: 'chromium' | 'firefox' | 'webkit'): Promise<void>;
@@ -41,6 +45,8 @@ export class CustomWorld extends World implements ICustomWorld {
   productoDetallePage: ProductoDetallePage | null;
   supermercadoBebidasPage: SupermercadoBebidasPage | null;
   supermercadoAlimentacionGeneralPage: SupermercadoAlimentacionGeneralPage | null;
+  eciHomePage: EciHomePage | null;
+  izertisHomePage: IzertisHomePage | null;
   testData: Record<string, any>;
   alertMessage: string;
 
@@ -58,6 +64,8 @@ export class CustomWorld extends World implements ICustomWorld {
     this.productoDetallePage = null;
     this.supermercadoBebidasPage = null;
     this.supermercadoAlimentacionGeneralPage = null;
+    this.eciHomePage = null;
+    this.izertisHomePage = null;
 
     this.testData = {};
     this.alertMessage = '';
@@ -69,19 +77,19 @@ export class CustomWorld extends World implements ICustomWorld {
       slowMo: process.env.SLOW_MO ? parseInt(process.env.SLOW_MO) : 0
     };
 
-    // Chromium: evitar ERR_HTTP2_PROTOCOL_ERROR y reducir detección de automatización
+     // Chromium: evitar ERR_HTTP2_PROTOCOL_ERROR y reducir detección de automatización
     if (browserType === 'chromium') {
       browserOptions.args = [
-        '--disable-http2',
-        '--disable-features=Http2ServerPush',
+        //'--disable-http2',
+        //'--disable-features=Http2ServerPush',
         '--disable-blink-features=AutomationControlled',
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-web-security',
-        '--disable-features=IsolateOrigins,site-per-process'
+       // '--no-sandbox',
+       // '--disable-setuid-sandbox',
+       // '--disable-dev-shm-usage',
+       // '--disable-web-security',
+       // '--disable-features=IsolateOrigins,site-per-process'
       ];
-    }
+    } 
 
     switch (browserType) {
       case 'firefox':
@@ -120,6 +128,8 @@ export class CustomWorld extends World implements ICustomWorld {
     this.productoDetallePage = new ProductoDetallePage(this.page);
     this.supermercadoBebidasPage = new SupermercadoBebidasPage(this.page);
     this.supermercadoAlimentacionGeneralPage = new SupermercadoAlimentacionGeneralPage(this.page);
+    this.eciHomePage = new EciHomePage(this.page);
+    this.izertisHomePage = new IzertisHomePage(this.page);
   }
 
   async closeBrowser(): Promise<void> {

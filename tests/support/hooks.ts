@@ -54,7 +54,7 @@ dotenv.config({ path: envFilePath });
 const environment = process.env.NODE_ENV || process.env.ENV || 'local';
 
 BeforeAll(async function() {
-  const dirs = ['reports', 'reports/screenshots'];
+  const dirs = ['reports', 'reports/screenshots', 'reports/security'];
   dirs.forEach(dir => {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });

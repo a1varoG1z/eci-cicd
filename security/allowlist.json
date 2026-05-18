@@ -1,0 +1,20 @@
+[
+  {
+    "domainPattern": "*.elcorteingles.es",
+    "pathPattern": "regex:^/(|login/?$)",
+    "categories": ["headers"],
+    "reason": "Estos headers se configuran en capas edge/CDN y no en el flujo UI probado; se excluyen en esta smoke para evitar ruido fuera del alcance del equipo de automatizacion."
+  },
+  {
+    "domainPattern": "*.elcorteingles.es",
+    "pathPattern": "regex:^/(|login/?$)",
+    "categories": ["cookies"],
+    "reason": "La mayoria de cookies detectadas en home/login pertenecen a terceros (consentimiento, analitica y anti-bot) y no a sesion de negocio bajo prueba funcional."
+  },
+  {
+    "domainPattern": "*.elcorteingles.es",
+    "pathPattern": "regex:^/(|login/?$)",
+    "categories": ["console-errors"],
+    "reason": "Errores de consola de scripts externos no bloquean el flujo de negocio validado por esta prueba y se tratan aparte en monitoreo front-end."
+  }
+]
