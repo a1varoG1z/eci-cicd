@@ -321,7 +321,7 @@ async function extractHtmlFilesFromArtifact(cfg, artifact) {
   
   // Buscar todos los archivos .html o .htm recursivamente en cualquier carpeta
   const htmlEntries = Object.values(zip.files).filter(
-    (entry) => !entry.dir && /\.htm?$/i.test(entry.name)
+    (entry) => !entry.dir && /\.html?$/i.test(entry.name)
   );
 
   // Ordenar por nombre para mejor presentacion
