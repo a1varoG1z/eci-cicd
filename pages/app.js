@@ -322,14 +322,15 @@ async function extractHtmlFilesFromArtifact(cfg, artifact) {
 }
 
 function openHtmlInNewTab(file) {
-  const popup = window.open("", "_blank", "noopener,noreferrer");
+  const htmlBlob = new Blob([file.content], { type: "text/html;charset=utf-8" });
+  const htmlUrl = URL.createObjectURL(htmlBlob);
+  const popup = window.open(htmlUrl, "_blank");
   if (!popup) {
+    URL.revokeObjectURL(htmlUrl);
     throw new Error("El navegador bloqueo la nueva pestana. Permite popups para este sitio.");
   }
 
-  popup.document.open();
-  popup.document.write(file.content);
-  popup.document.close();
+  setTimeout(() => URL.revokeObjectURL(htmlUrl), 60000);
 }
 
 function renderHtmlLinks(containerEl, htmlFiles) {
