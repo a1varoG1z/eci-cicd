@@ -211,7 +211,7 @@ async function findRun(cfg, userLogin, notBeforeIso) {
 }
 
 async function waitForRun(cfg, userLogin, notBeforeIso) {
-  for (let i = 0; i < 24; i++) {
+  for (let i = 0; i < 100; i++) {
     const run = await findRun(cfg, userLogin, notBeforeIso);
     if (run) return run;
 
