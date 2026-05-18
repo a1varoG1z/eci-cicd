@@ -36,10 +36,13 @@ jobs:
         run: npx playwright install --with-deps
 
       - name: Verificar variable HEADLESS
-        run: echo "HEADLESS=${{ inputs.headless }}"
+        run: |
+          echo "browser=${{ github.event.inputs.browser || inputs.browser }}"
+          echo "headless=${{ github.event.inputs.headless || inputs.headless }}"
+          echo "env=${{ github.event.inputs.env || inputs.env }}"
 
       - name: Ejecutar tests de accesibilidad
-        run: npx cross-env ENV=${{ inputs.env }} BROWSER=${{ inputs.browser }} HEADLESS=${{ inputs.headless }} cucumber-js --tags "@accesibility"
+        run: npx cross-env ENV=${{ github.event.inputs.env || inputs.env }} BROWSER=${{ github.event.inputs.browser || inputs.browser }} HEADLESS=${{ github.event.inputs.headless || inputs.headless }} cucumber-js --tags "@accesibility"
 
       - name: Subir artefactos de reportes
         if: always()

@@ -182,6 +182,21 @@ function renderRunInfo(run, owner, repo) {
   `;
 }
 
+function renderDispatchDebug(cfg) {
+  const payload = {
+    owner: cfg.owner,
+    repo: cfg.repo,
+    workflowFile: cfg.workflowFile,
+    ref: cfg.ref,
+    inputs: cfg.inputs
+  };
+
+  runInfoEl.innerHTML = `
+    <p><strong>Dispatch payload (debug):</strong></p>
+    <pre style="white-space: pre-wrap; word-break: break-word; margin: 0;">${JSON.stringify(payload, null, 2)}</pre>
+  `;
+}
+
 async function dispatchWorkflow(cfg) {
   const url = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/actions/workflows/${cfg.workflowFile}/dispatches`;
   await ghFetch(url, cfg.token, {
@@ -426,6 +441,15 @@ async function runFlow() {
 
     const now = new Date();
     const notBefore = new Date(now.getTime() - 120000).toISOString();
+
+    renderDispatchDebug(cfg);
+    console.log("Dispatch payload:", {
+      owner: cfg.owner,
+      repo: cfg.repo,
+      workflowFile: cfg.workflowFile,
+      ref: cfg.ref,
+      inputs: cfg.inputs
+    });
 
     setStatus("Lanzando workflow...");
     await dispatchWorkflow(cfg);
