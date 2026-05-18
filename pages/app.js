@@ -24,6 +24,11 @@ const ACTIONS = {
     workflowFile: "playwright-accessibility-manual.yml",
     defaultTag: "@accesibility",
     forceDefaultTag: true
+  },
+  "prueba-eci": {
+    workflowFile: "playwright-manual.yml",
+    defaultTag: "@prueba-eci",
+    forceDefaultTag: true
   }
 };
 
