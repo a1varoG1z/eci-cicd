@@ -220,7 +220,7 @@ async function waitForRun(cfg, userLogin, notBeforeIso) {
     const run = await findRun(cfg, userLogin, notBeforeIso);
     if (run) return run;
 
-    setStatus(`Buscando ejecucion... intento ${i + 1}/24`);
+    setStatus(`Buscando ejecucion... intento ${i + 1}/100`);
     await new Promise((resolve) => setTimeout(resolve, 5000));
   }
 
